@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+
+echo Insert the VirtualBox 5.0.16 guest additions disc, then press ENTER.
+read
+
+sudo sed -i.bak '/^%sudo/s/) ALL/) NOPASSWD: ALL/' /etc/sudoers
+sudo rm -f /etc/sudoers.bak
+
+sudo apt update
+sudo apt dist-upgrade -y
+
+sudo apt install -y \
+  xorg i3 nodm feh \
+  alsa-utils build-essential git psmisc \
+  chromium-browser vim-gtk3
+
+sudo sed -i.bak "
+  /^NODM_ENABLED=/s/false/true/
+  /^NODM_USER=/s/=.*/=$USER/
+" /etc/default/nodm
+sudo rm -f /etc/default/nodm.bak
+
+sudo mount /dev/cdrom /mnt
+sudo /mnt/VBoxLinuxAdditions.run || true
+
+sudo gpasswd -a "$USER" audio
+sudo gpasswd -a "$USER" video
+sudo gpasswd -a "$USER" vboxsf
+
+sudo umount /mnt
+eject /dev/cdrom
+
+echo Now you should reboot :D
