@@ -4,30 +4,42 @@ set -e
 echo Insert the VirtualBox 5.0.16 guest additions disc, then press ENTER.
 read
 
+# Don't require a password to sudo for users in the sudo group
 sudo sed -i.bak '/^%sudo/s/) ALL/) NOPASSWD: ALL/' /etc/sudoers
 sudo rm -f /etc/sudoers.bak
 
+# Update Ubuntu
 sudo apt update
 sudo apt dist-upgrade -y
 
+# Install the packages we need that don't come with the base system
 sudo apt install -y \
   xorg i3 nodm feh \
   alsa-utils build-essential git psmisc \
   chromium-browser vim-gtk3
 
+# Enable nodm and set it to login our current user account
 sudo sed -i.bak "
   /^NODM_ENABLED=/s/false/true/
   /^NODM_USER=/s/=.*/=$USER/
 " /etc/default/nodm
 sudo rm -f /etc/default/nodm.bak
 
+# Install VirtualBox's guest additions
 sudo mount /dev/cdrom /mnt
 sudo /mnt/VBoxLinuxAdditions.run || true
 
+# Make sure the vboxvideo module is loaded at boot
+if ! grep '^\s*vboxvideo\s*$' /etc/modules; then
+  sudo bash -c 'echo vboxvideo >> /etc/modules'
+fi
+
+# Add us to groups that control access to resources we need
 sudo gpasswd -a "$USER" audio
 sudo gpasswd -a "$USER" video
 sudo gpasswd -a "$USER" vboxsf
 
+# Eject the guest additions disk
 sudo umount /mnt
 eject /dev/cdrom
 
